@@ -13,7 +13,6 @@ plugins {
     id("signing")
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("org.jetbrains.kotlin.jvm") version "1.7.21"
-//    kotlin("jvm") version "1.8.20"
 }
 
 repositories {
@@ -33,49 +32,23 @@ kotlin {
 val kotlin_version = "1.7.21"
 val jetty_version = "11.0.15"
 val scala_version = "2.13.8"
+val skyenet_version = "1.0.12"
 dependencies {
+    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.14")
 
-//    implementation("com.simiacryptus:JoePenai:1.0.8")
-    implementation("com.simiacryptus:joe-penai:1.0.7")
+    implementation(group = "com.simiacryptus.skyenet", name = "util", version = skyenet_version)
+    implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
+    implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
+    implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
+    implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
-    implementation("org.apache.groovy:groovy-all:4.0.11")
+    implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
 
-//    implementation("com.simiacryptus:skyenet:1.0.4")
-//    implementation("com.simiacryptus:SkyeNet:1.0.5")
-    implementation("com.simiacryptus.skyenet:util:1.0.5")
-    implementation("com.simiacryptus.skyenet:core:1.0.5")
-    implementation("com.simiacryptus.skyenet:groovy:1.0.5")
-    implementation("com.simiacryptus.skyenet:webui:1.0.5")
+    implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.454")
 
-    implementation("org.eclipse.jetty:jetty-server:$jetty_version")
-    implementation("org.eclipse.jetty:jetty-servlet:$jetty_version")
-    implementation("org.eclipse.jetty:jetty-annotations:$jetty_version")
-    implementation("org.eclipse.jetty.websocket:websocket-jetty-server:$jetty_version")
-    implementation("org.eclipse.jetty.websocket:websocket-jetty-client:$jetty_version")
-    implementation("org.eclipse.jetty.websocket:websocket-servlet:$jetty_version")
-
-    implementation("com.google.api-client:google-api-client:1.35.2")
-    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-    implementation("com.google.apis:google-api-services-oauth2:v2-rev157-1.25.0")
-
-    implementation("com.amazonaws:aws-java-sdk:1.12.454")
-
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation(kotlin("stdlib-jdk8"))
-
-    implementation("com.google.cloud:google-cloud-texttospeech:2.0.0")
-
-    implementation("org.slf4j:slf4j-api:2.0.5")
-    implementation("ch.qos.logback:logback-classic:1.2.9")
-    implementation("ch.qos.logback:logback-core:1.2.9")
-    //implementation("org.slf4j:slf4j-simple:2.0.5")
-    implementation("commons-io:commons-io:2.11.0")
-
-    testImplementation(kotlin("script-runtime"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
-
+    implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.5")
+    implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.2.9")
+    implementation(group = "ch.qos.logback", name = "logback-core", version = "1.2.9")
 }
 
 tasks.withType(ShadowJar::class.java).configureEach {
