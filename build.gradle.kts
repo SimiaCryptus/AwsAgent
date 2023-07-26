@@ -43,6 +43,9 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
+    implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
+
+    implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
 
     implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.454")
 

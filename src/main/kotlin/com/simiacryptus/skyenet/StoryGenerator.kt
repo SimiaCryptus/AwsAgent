@@ -11,11 +11,13 @@ import java.net.URI
 class StoryGenerator(
     applicationName: String,
     baseURL: String,
+    oauthConfig: String? = null,
     temperature: Double = 0.3
 ) : SkyenetMacroChat(
     applicationName = applicationName,
     baseURL = baseURL,
-    temperature = temperature
+    temperature = temperature,
+    oauthConfig = oauthConfig
 ) {
     interface StoryAPI {
 
@@ -89,7 +91,7 @@ class StoryGenerator(
                     """<div>${
                         sessionUI.hrefLink {
                             sendUpdate("<hr/><div><em>${storyParameters.title}</em></div>", true)
-                            extracted(
+                            processPage(
                                 sendUpdate = sendUpdate,
                                 history = listOf(),
                                 storyPage = storyAPI.getFirstStoryPage(storyParameters),
@@ -104,7 +106,7 @@ class StoryGenerator(
         }
     }
 
-    private fun extracted(
+    fun processPage(
         sendUpdate: (String, Boolean) -> Unit,
         history: List<String>,
         storyPage: StoryAPI.StoryPage,
@@ -130,7 +132,7 @@ class StoryGenerator(
                             """<div><em>${ChatSessionFlexmark.renderMarkdown(choice.text)}</em></div>""",
                             true
                         )
-                        extracted(
+                        processPage(
                             sendUpdate = sendUpdate,
                             history = history + (storyPage.text + "\n\n" + choice.text),
                             storyPage = storyAPI.nextStoryPage(
@@ -152,14 +154,15 @@ class StoryGenerator(
 
     companion object {
 
-        const val port = 8081
-        const val baseURL = "http://localhost:$port"
-
         @JvmStatic
         fun main(args: Array<String>) {
-            val httpServer = StoryGenerator("StoryGenerator", baseURL).start(port)
+            val port = 8081
+            val baseURL = "http://localhost:$port"
+            val httpServer = start(baseURL, port)
             Desktop.getDesktop().browse(URI(baseURL))
             httpServer.join()
         }
+
+        fun start(baseURL: String, port: Int) = StoryGenerator("StoryGenerator", baseURL).start(port)
     }
 }
