@@ -31,7 +31,7 @@ object MultipathServer {
         webAppContext.baseResource = Resource.newResource(javaClass.classLoader.getResource("welcome"))
         webAppContext.contextPath = "/"
         webAppContext.welcomeFiles = arrayOf("index.html")
-        authentication.configure(webAppContext)
+        authentication.configure(webAppContext, false)
 
         val awsagent = AwsSkyenetCodingSessionServer(
             baseURL = if (isServer) "https://$domainName/awsagent/" else "http://$localName:$port/awsagent/",
