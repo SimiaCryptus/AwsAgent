@@ -131,6 +131,7 @@
     color: #000;
     text-decoration: none;
     padding: 5px;
+    display: block;
 }
 
 #toolbar a:hover {

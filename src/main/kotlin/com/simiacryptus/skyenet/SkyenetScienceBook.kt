@@ -116,6 +116,7 @@ class SkyenetScienceBook(
         temperature = temperature
     ).create()
     override fun processMessage(
+        sessionId: String,
         userMessage: String,
         sessionUI: SessionUI,
         sendUpdate: (String, Boolean) -> Unit

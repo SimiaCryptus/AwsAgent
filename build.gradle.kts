@@ -106,7 +106,7 @@ tasks.withType(ShadowJar::class.java).configureEach {
 
     manifest {
         attributes(
-            "Main-Class" to "com.simiacryptus.skyenet.AwsAgent"
+            "Main-Class" to "com.simiacryptus.skyenet.MultipathServer"
         )
     }
 }

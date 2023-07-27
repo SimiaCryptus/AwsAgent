@@ -81,13 +81,26 @@ object MultipathServer {
         //authentication.configure(scienceBookGeneratorContext)
         scienceBookGenerator.configure(scienceBookGeneratorContext, prefix = "")
 
+        val softwareProjectGenerator = SoftwareProjectGenerator(
+            applicationName = "SoftwareProjectGenerator",
+            baseURL = if (isServer) "https://$domainName/software/" else "http://$localName:$port/software/"
+        )
+        val softwareProjectGeneratorContext = WebAppContext()
+        JettyWebSocketServletContainerInitializer.configure(softwareProjectGeneratorContext, null)
+        softwareProjectGeneratorContext.baseResource = softwareProjectGenerator.baseResource
+        softwareProjectGeneratorContext.contextPath = "/software"
+        softwareProjectGeneratorContext.welcomeFiles = arrayOf("index.html")
+        //authentication.configure(softwareProjectGeneratorContext)
+        softwareProjectGenerator.configure(softwareProjectGeneratorContext, prefix = "")
+
         val contexts = ContextHandlerCollection()
         contexts.handlers = arrayOf(
             webAppContext,
             awsagentContext,
             storyGenContext,
             cookbookGeneratorContext,
-            scienceBookGeneratorContext
+            scienceBookGeneratorContext,
+            softwareProjectGeneratorContext
         )
 
         val server = Server(port)
