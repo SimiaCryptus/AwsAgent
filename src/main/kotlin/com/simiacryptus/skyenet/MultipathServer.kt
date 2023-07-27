@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.AwsAgent.AwsSkyenetCodingSessionServer
 import com.simiacryptus.skyenet.body.AuthenticatedWebsite
+import com.simiacryptus.skyenet.body.WebSocketServer
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.util.resource.Resource
@@ -26,92 +27,80 @@ object MultipathServer {
             applicationName = "Demo",
             key = { AwsAgent.decrypt("client_secret_google_oauth.json.kms").byteInputStream() }
         )
-        val webAppContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(webAppContext, null)
-        webAppContext.baseResource = Resource.newResource(javaClass.classLoader.getResource("welcome"))
-        webAppContext.contextPath = "/"
-        webAppContext.welcomeFiles = arrayOf("index.html")
-        authentication.configure(webAppContext, false)
 
-        val awsagent = AwsSkyenetCodingSessionServer(
-            baseURL = if (isServer) "https://$domainName/awsagent/" else "http://$localName:$port/awsagent/",
-            oauthConfig = null
+        val server = start(
+            port,
+            authentication.configure(
+                newWebAppContext(
+                    "/",
+                    Resource.newResource(javaClass.classLoader.getResource("welcome"))
+                ), false
+            ),
+            authentication.configure(
+                newWebAppContext(
+                    "/awsagent", AwsSkyenetCodingSessionServer(
+                        baseURL = if (isServer) "https://$domainName/awsagent/" else "http://$localName:$port/awsagent/",
+                        oauthConfig = null
+                    )
+                )),
+            newWebAppContext(
+                "/storygen", StoryGenerator(
+                    applicationName = "StoryGenerator",
+                    baseURL = if (isServer) "https://$domainName/storygen/" else "http://$localName:$port/storygen/"
+                )
+            ),
+            newWebAppContext(
+                "/cookbook", CookbookGenerator(
+                    applicationName = "CookbookGenerator",
+                    baseURL = if (isServer) "https://$domainName/cookbook/" else "http://$localName:$port/cookbook/"
+                )
+            ),
+            newWebAppContext(
+                "/science", SkyenetScienceBook(
+                    applicationName = "ScienceBookGenerator",
+                    baseURL = if (isServer) "https://$domainName/science/" else "http://$localName:$port/science/"
+                )
+            ),
+            newWebAppContext(
+                "/software", SoftwareProjectGenerator(
+                    applicationName = "SoftwareProjectGenerator",
+                    baseURL = if (isServer) "https://$domainName/software/" else "http://$localName:$port/software/"
+                )
+            )
         )
-        val awsagentContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(awsagentContext, null)
-        awsagentContext.baseResource = awsagent.baseResource
-        awsagentContext.contextPath = "/awsagent"
-        awsagentContext.welcomeFiles = arrayOf("index.html")
-        authentication.configure(awsagentContext)
-        awsagent.configure(awsagentContext, prefix = "")
-
-        val storyGen = StoryGenerator(
-            applicationName = "StoryGenerator",
-            baseURL = if (isServer) "https://$domainName/storygen/" else "http://$localName:$port/storygen/"
-        )
-        val storyGenContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(storyGenContext, null)
-        storyGenContext.baseResource = storyGen.baseResource
-        storyGenContext.contextPath = "/storygen"
-        storyGenContext.welcomeFiles = arrayOf("index.html")
-        //authentication.configure(storyGenContext)
-        storyGen.configure(storyGenContext, prefix = "")
-
-        val cookbookGenerator = CookbookGenerator(
-            applicationName = "CookbookGenerator",
-            baseURL = if (isServer) "https://$domainName/cookbook/" else "http://$localName:$port/cookbook/"
-        )
-        val cookbookGeneratorContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(cookbookGeneratorContext, null)
-        cookbookGeneratorContext.baseResource = cookbookGenerator.baseResource
-        cookbookGeneratorContext.contextPath = "/cookbook"
-        cookbookGeneratorContext.welcomeFiles = arrayOf("index.html")
-        //authentication.configure(cookbookGeneratorContext)
-        cookbookGenerator.configure(cookbookGeneratorContext, prefix = "")
-
-        val scienceBookGenerator = SkyenetScienceBook(
-            applicationName = "ScienceBookGenerator",
-            baseURL = if (isServer) "https://$domainName/science/" else "http://$localName:$port/science/"
-        )
-        val scienceBookGeneratorContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(scienceBookGeneratorContext, null)
-        scienceBookGeneratorContext.baseResource = scienceBookGenerator.baseResource
-        scienceBookGeneratorContext.contextPath = "/science"
-        scienceBookGeneratorContext.welcomeFiles = arrayOf("index.html")
-        //authentication.configure(scienceBookGeneratorContext)
-        scienceBookGenerator.configure(scienceBookGeneratorContext, prefix = "")
-
-        val softwareProjectGenerator = SoftwareProjectGenerator(
-            applicationName = "SoftwareProjectGenerator",
-            baseURL = if (isServer) "https://$domainName/software/" else "http://$localName:$port/software/"
-        )
-        val softwareProjectGeneratorContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(softwareProjectGeneratorContext, null)
-        softwareProjectGeneratorContext.baseResource = softwareProjectGenerator.baseResource
-        softwareProjectGeneratorContext.contextPath = "/software"
-        softwareProjectGeneratorContext.welcomeFiles = arrayOf("index.html")
-        //authentication.configure(softwareProjectGeneratorContext)
-        softwareProjectGenerator.configure(softwareProjectGeneratorContext, prefix = "")
-
-        val contexts = ContextHandlerCollection()
-        contexts.handlers = arrayOf(
-            webAppContext,
-            awsagentContext,
-            storyGenContext,
-            cookbookGeneratorContext,
-            scienceBookGeneratorContext,
-            softwareProjectGeneratorContext
-        )
-
-        val server = Server(port)
-        server.handler = contexts
-        server.start()
         if (!isServer) try {
             Desktop.getDesktop().browse(URI("http://$localName:$port/"))
         } catch (e: Throwable) {
             e.printStackTrace()
         }
         server.join()
+    }
+
+    fun start(
+        port: Int,
+        vararg webAppContexts: WebAppContext
+    ): Server {
+        val contexts = ContextHandlerCollection()
+        contexts.handlers = webAppContexts
+        val server = Server(port)
+        server.handler = contexts
+        server.start()
+        return server
+    }
+
+    fun newWebAppContext(path: String, server: WebSocketServer): WebAppContext {
+        val webAppContext = newWebAppContext(path, server.baseResource)
+        server.configure(webAppContext)
+        return webAppContext
+    }
+
+    fun newWebAppContext(path: String, baseResource: Resource?): WebAppContext {
+        val awsagentContext = WebAppContext()
+        JettyWebSocketServletContainerInitializer.configure(awsagentContext, null)
+        awsagentContext.baseResource = baseResource
+        awsagentContext.contextPath = path
+        awsagentContext.welcomeFiles = arrayOf("index.html")
+        return awsagentContext
     }
 
 }

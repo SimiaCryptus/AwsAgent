@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet
 
-object EncryptFile {
+object EncryptFiles {
 
     @JvmStatic
     fun main(args: Array<String>) {
