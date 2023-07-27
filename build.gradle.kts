@@ -43,7 +43,9 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
+    implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
+    implementation(group = "commons-io", name = "commons-io", version = "2.11.0")
 
     implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
 

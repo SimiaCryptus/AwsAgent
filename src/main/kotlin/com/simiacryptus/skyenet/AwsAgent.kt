@@ -47,27 +47,6 @@ object AwsAgent {
         fun client() = org.apache.http.impl.client.HttpClients.createDefault()
     }
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        OpenAIClient.keyTxt = decrypt("openai.key.kms")
-        val domain = "localhost"
-        val httpServer = listOf(
-            AwsAgent.start("http://$domain:8081", 8081),
-            StoryGenerator(
-                applicationName = "StoryGenerator",
-                baseURL = "http://$domain:8082",
-                oauthConfig = oauthConfig.absolutePath
-            ).start(8082)
-        )
-        try {
-            Desktop.getDesktop().browse(URI("http://$domain:8081"))
-            Desktop.getDesktop().browse(URI("http://$domain:8082"))
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        }
-        httpServer.forEach { it.join() }
-    }
-
     fun encrypt(inputFilePath: String, outputFilePath: String) {
         val filePath = Paths.get(inputFilePath)
         val fileBytes = Files.readAllBytes(filePath)
@@ -95,7 +74,7 @@ object AwsAgent {
         return String(decryptedData, StandardCharsets.UTF_8)
     }
 
-    val oauthConfig by lazy {
+    val oauthConfig: File by lazy {
         writeToTempFile(
             decrypt("client_secret_google_oauth.json.kms"),
             "client_secret_google_oauth.json"
@@ -104,28 +83,35 @@ object AwsAgent {
 
     fun start(baseURL: String, port: Int): Server {
         // Load /client_secret_google_oauth.json.kms from classpath, decrypt it, and print it out
-        return object : SkyenetCodingSessionServer(
-            applicationName = "AwsAgent",
-            oauthConfig = oauthConfig.absolutePath,
-            typeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus", "com.github.simiacryptus"),
-            baseURL = baseURL,
-            model = OpenAIClient.Models.GPT4,
-            apiKey = OpenAIClient.keyTxt
-        ) {
-            override fun hands() = mapOf(
-                "aws" to AwsClients(Regions.US_EAST_1) as Object,
-                "client" to HttpUtil() as Object,
-            ).asJava
-
-            override fun toString(e: Throwable): String {
-                return e.message ?: e.toString()
-            }
-
-            //            override fun heart(hands: java.util.Map<String, Object>): Heart = GroovyInterpreter(hands)
-            override fun heart(hands: Map<String, Object>): Heart =
-                ScalaLocalInterpreter::class.java.getConstructor(Map::class.java).newInstance(hands)
-        }.start(port)
+        return codingSessionServer(baseURL).start(port)
     }
+
+    open class AwsSkyenetCodingSessionServer(
+        baseURL: String,
+        oauthConfig: File? = AwsAgent.oauthConfig,
+    )  : SkyenetCodingSessionServer(
+        applicationName = "AwsAgent",
+        oauthConfig = oauthConfig?.absolutePath,
+        typeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus", "com.github.simiacryptus"),
+        baseURL = baseURL,
+        model = OpenAIClient.Models.GPT4,
+        apiKey = OpenAIClient.keyTxt
+    ) {
+        override fun hands() = mapOf(
+            "aws" to AwsClients(Regions.US_EAST_1) as Object,
+            "client" to HttpUtil() as Object,
+        ).asJava
+
+        override fun toString(e: Throwable): String {
+            return e.message ?: e.toString()
+        }
+
+        //            override fun heart(hands: java.util.Map<String, Object>): Heart = GroovyInterpreter(hands)
+        override fun heart(hands: Map<String, Object>): Heart =
+            ScalaLocalInterpreter::class.java.getConstructor(Map::class.java).newInstance(hands)
+    }
+
+    fun codingSessionServer(baseURL: String) = AwsSkyenetCodingSessionServer(baseURL)
 
     fun writeToTempFile(text: String, filename: String): File {
         val tempFile = File.createTempFile(filename, ".tmp")
@@ -134,4 +120,15 @@ object AwsAgent {
         return tempFile
     }
 
+    @JvmStatic
+    fun main(args: Array<String>) {
+        OpenAIClient.keyTxt = decrypt("openai.key.kms")
+        val isServer = args.contains("--server")
+        val localName = "localhost"
+        val httpServer = start(if (isServer) "https://awsagent.simiacrypt.us" else "http://$localName:8081", 8081)
+        Desktop.getDesktop().browse(URI("http://$localName:8081"))
+        httpServer.join()
+    }
+
 }
+
