@@ -22,7 +22,7 @@ object MultipathServer {
         val port = 8081
 
         val authentication = AuthenticatedWebsite(
-            redirectUri = "http://$localName:$port/oauth2callback",
+            redirectUri = if (isServer) "https://$domainName/oauth2callback" else "http://$localName:$port/oauth2callback",
             applicationName = "Demo",
             key = { AwsAgent.decrypt("client_secret_google_oauth.json.kms").byteInputStream() }
         )
