@@ -42,6 +42,10 @@ class SoftwareProjectGenerator(
         )
 
         fun implementFile(file: FileSpec): FileImpl
+        fun modify(
+            projectParameters: ProjectParameters,
+            userInput: String
+        ): ProjectParameters
 
         data class FileImpl(
             val filepath: String = "",
@@ -68,29 +72,59 @@ class SoftwareProjectGenerator(
         try {
             sendUpdate("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
             val projectParameters = projectAPI.parseProject(userMessage)
-            sendUpdate("""<pre>${JsonUtil.toJson(projectParameters)}</pre>""", true)
+            reviewProject(sendUpdate, projectParameters, sessionUI, sessionId)
             //sendUpdate("<hr/><div><em>${projectParameters.title}</em></div>", true)
-            val fileSpecList = projectAPI.expandProject(projectParameters)
-
-            fileSpecList.items.forEach { fileSpec ->
-                sendUpdate(
-                    """<div>${
-                        sessionUI.hrefLink {
-                            sendUpdate("<hr/><div><em>${fileSpec.filepath}</em></div>", true)
-                            val fileImpl = projectAPI.implementFile(fileSpec)
-                            // HtmlEncode fileImpl.text
-                            val fileImplText = fileImpl.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                            sendUpdate("<pre>${fileImplText}</pre>", false)
-                            val toFile = sessionDataStorage.getSessionDir(sessionId).toPath().resolve(fileSpec.filepath).toFile()
-                            toFile.parentFile.mkdirs()
-                            toFile.writeText(fileImplText)
-                        }
-                    }${fileSpec.filepath}</a></div>""", false)
-            }
-
+            //handleProject(projectParameters, sendUpdate, sessionUI, sessionId)
         } catch (e: Throwable) {
             logger.warn("Error", e)
         }
+    }
+
+    fun handleProject(
+        projectParameters: ProjectAPI.ProjectParameters,
+        sendUpdate: (String, Boolean) -> Unit,
+        sessionUI: SessionUI,
+        sessionId: String
+    ) {
+        val fileSpecList = projectAPI.expandProject(projectParameters)
+
+        fileSpecList.items.forEach { fileSpec ->
+            sendUpdate(
+                """<div>${
+                    sessionUI.hrefLink {
+                        sendUpdate("<hr/><div><em>${fileSpec.filepath}</em></div>", true)
+                        val fileImpl = projectAPI.implementFile(fileSpec)
+                        // HtmlEncode fileImpl.text
+                        val fileImplText = fileImpl.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                        sendUpdate("<pre>${fileImplText}</pre>", false)
+                        val toFile =
+                            sessionDataStorage.getSessionDir(sessionId).toPath().resolve(fileSpec.filepath).toFile()
+                        toFile.parentFile.mkdirs()
+                        toFile.writeText(fileImplText)
+                    }
+                }${fileSpec.filepath}</a></div>""", false)
+        }
+    }
+
+    fun reviewProject(
+        sendUpdate: (String, Boolean) -> Unit,
+        projectParameters: ProjectAPI.ProjectParameters,
+        sessionUI: SessionUI,
+        sessionId: String
+    ) {
+        sendUpdate("""
+            <pre>${JsonUtil.toJson(projectParameters)}</pre>
+            <br/>
+            ${sessionUI.textInput { userInput ->
+                sendUpdate("", true)
+                reviewProject(sendUpdate, projectAPI.modify(projectParameters, userInput), sessionUI, sessionId)
+            } }
+            <br/>
+            ${sessionUI.hrefLink {
+                sendUpdate("", true)
+                handleProject(projectParameters, sendUpdate, sessionUI, sessionId)
+            } }Execute</a>
+            """, true)
     }
 
     companion object {

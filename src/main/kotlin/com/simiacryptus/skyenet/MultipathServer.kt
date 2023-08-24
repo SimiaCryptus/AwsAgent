@@ -66,6 +66,12 @@ object MultipathServer {
                     applicationName = "SoftwareProjectGenerator",
                     baseURL = if (isServer) "https://$domainName/software/" else "http://$localName:$port/software/"
                 )
+            ),
+            newWebAppContext(
+                "/roblox", RobloxLuaCoder(
+                    applicationName = "RobloxLuaCoder",
+                    baseURL = if (isServer) "https://$domainName/roblox/" else "http://$localName:$port/roblox/"
+                )
             )
         )
         if (!isServer) try {
