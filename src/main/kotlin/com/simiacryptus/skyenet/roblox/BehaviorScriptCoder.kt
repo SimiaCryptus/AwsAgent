@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet
+package com.simiacryptus.skyenet.roblox
 
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.body.ChatSessionFlexmark
@@ -6,11 +6,11 @@ import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import java.awt.Desktop
 import java.net.URI
 
-class RobloxLuaCoder(
+class BehaviorScriptCoder(
     applicationName: String,
     baseURL: String,
     oauthConfig: String? = null,
-    temperature: Double = 0.3
+    temperature: Double = 0.1
 ) : SkyenetMacroChat(
     applicationName = applicationName,
     baseURL = baseURL,
@@ -31,28 +31,31 @@ class RobloxLuaCoder(
             OpenAIClient.ChatRequest(
                 messages = arrayOf(
                     OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.system, content = """
-                        You will convert the natural language description of an action for a Roblox game command into a Lua definition
+                        You will convert the natural language description of an behavior for a Roblox game script into a Lua definition
                     """.trimIndent()),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.user, content = "Modify the user's walkspeed"),
+                    OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.user, content = "Kill the player on touch"),
                     OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.assistant, content = """
                         ```lua
-                        {
-                            PrimaryAlias = "walkspeed",
-                            SecondaryAlias = "speed",
-                            PermissionLevel = 0,
-                            Function = function(player: Player, args: { string })
-                                local character = player.Character
-                                if character then
-                                    local humanoid = character:FindFirstChildOfClass("Humanoid")
-                                    if humanoid then
-                                        local speed = args[1]
-                                        if speed and tonumber(speed) then
-                                            humanoid.WalkSpeed = tonumber(speed) :: number
-                                        end
-                                    end
-                                end
-                            end,
-                        }
+                        function handlePart(part)
+                        	part.Touched:Connect(function(hit)
+                        		local humanoid = hit.Parent:FindFirstChild('Humanoid')
+                        		if humanoid then
+                        			humanoid.Health = 0
+                        		end
+                        	end)
+                        end
+
+                        function handleNode(model)
+                        	for i, part in pairs(model:GetChildren()) do
+                        		if part:IsA('Part') then
+                        			handlePart(part)
+                        		else
+                        			handleNode(part)
+                        		end
+                        	end
+                        end
+
+                        handleNode(script.Parent)
                         ```
                     """.trimIndent()),
                     OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.user, content = userMessage)
@@ -72,7 +75,7 @@ class RobloxLuaCoder(
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val httpServer = RobloxLuaCoder("RobloxLuaCoder", baseURL).start(port)
+            val httpServer = BehaviorScriptCoder("RobloxLuaCoder", baseURL).start(port)
             Desktop.getDesktop().browse(URI(baseURL))
             httpServer.join()
         }

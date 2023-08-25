@@ -4,6 +4,8 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.AwsAgent.AwsSkyenetCodingSessionServer
 import com.simiacryptus.skyenet.body.AuthenticatedWebsite
 import com.simiacryptus.skyenet.body.WebSocketServer
+import com.simiacryptus.skyenet.roblox.AdminCommandCoder
+import com.simiacryptus.skyenet.roblox.BehaviorScriptCoder
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.util.resource.Resource
@@ -68,9 +70,15 @@ object MultipathServer {
                 )
             ),
             newWebAppContext(
-                "/roblox", RobloxLuaCoder(
-                    applicationName = "RobloxLuaCoder",
-                    baseURL = if (isServer) "https://$domainName/roblox/" else "http://$localName:$port/roblox/"
+                "/roblox_cmd", AdminCommandCoder(
+                    applicationName = "AdminCommandCoder",
+                    baseURL = if (isServer) "https://$domainName/roblox_cmd/" else "http://$localName:$port/roblox_cmd/"
+                )
+            ),
+            newWebAppContext(
+                "/roblox_script", BehaviorScriptCoder(
+                    applicationName = "BehaviorScriptCoder",
+                    baseURL = if (isServer) "https://$domainName/roblox_script/" else "http://$localName:$port/roblox_script/"
                 )
             )
         )
