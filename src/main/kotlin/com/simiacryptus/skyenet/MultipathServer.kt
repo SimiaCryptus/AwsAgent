@@ -52,6 +52,12 @@ object MultipathServer {
                 )
             ),
             newWebAppContext(
+                "/news", NewsStoryGenerator(
+                    applicationName = "NewsStoryGenerator",
+                    baseURL = if (isServer) "https://$domainName/news/" else "http://$localName:$port/news/"
+                )
+            ),
+            newWebAppContext(
                 "/cookbook", CookbookGenerator(
                     applicationName = "CookbookGenerator",
                     baseURL = if (isServer) "https://$domainName/cookbook/" else "http://$localName:$port/cookbook/"
